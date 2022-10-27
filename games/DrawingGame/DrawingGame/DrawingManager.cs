@@ -84,7 +84,8 @@ public class DrawingManager : BindableObject
     public async Task StartGame(string name, string groupName, bool isCreatingGame)
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://drawinggame-server.azurewebsites.net/Game")
+            //.WithUrl("https://drawinggame-server.azurewebsites.net/Game")
+            .WithUrl("http://localhost:5106/Game")
             .Build();
 
         this.GroupName = groupName;

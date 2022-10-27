@@ -1,0 +1,225 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client;
+@using DrawingGame.Shared;
+@using System.Collections.ObjectModel;
+@using Blazor.Extensions.Canvas.Canvas2D;
+@using Blazor.Extensions;
+<PageTitle>Index</PageTitle>
+
+<h1>Draw It!</h1>
+
+<BECanvas Width="1000" Height="1000" @ref="_canvasReference"></BECanvas>
+
+@code
+{
+    private Canvas2DContext? _context;
+    protected BECanvas? _canvasReference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_canvasReference == null)
+            return;
+
+        this._context = await this._canvasReference.CreateCanvas2DAsync();
+        @*await this._context.SetFillStyleAsync("green");
+
+        await this._context.FillRectAsync(10, 100, 100, 100);
+
+        await this._context.SetFontAsync("48px serif");
+        await this._context.StrokeTextAsync("Hello Blazor!!!", 10, 100);*@
+    }
+
+    // TODO: Move to shared
+    private const string GuessAttemptName = "GuessAttempt";
+    private const string GuessCorrectName = "GuessCorrect";
+    private const string PlayerConnectedName = "PlayerConnected";
+    private const string SessionStartedName = "SessionStarted";
+    private const string UpdateMethodName = "UpdateDrawingState";
+
+    private HubConnection hubConnection = new HubConnectionBuilder()
+        //.WithUrl("https://drawinggame-server.azurewebsites.net/Game")
+        .WithUrl("http://localhost:5106/Game")
+        .Build();
+
+    public ObservableCollection<Player> Players { get; } = new();
+    public string Word { get; private set; } = string.Empty;
+
+    private string drawingPlayerName = string.Empty;
+    public string DrawingPlayerName
+    {
+        get => drawingPlayerName;
+        private set
+        {
+            drawingPlayerName = value;
+        }
+    }
+
+    public string PlayerName { get; private set; } = string.Empty;
+    public string GroupName { get; set; } = string.Empty;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await StartGame("GeraldWeb", "Test", false);
+    }
+    private DateTime lastUpdate = DateTime.Now;
+    private async Task StartGame(string name, string groupName, bool isCreatingGame)
+    {
+        hubConnection.On<DrawingState>(UpdateMethodName, async state =>
+        {
+            if (_context == null)
+                return;
+
+            if (DateTime.Now.Subtract(lastUpdate).Milliseconds <= 50)
+                return;
+
+            try
+            {
+
+
+                @*paths.Clear();*@
+    await _context.ClearRectAsync(0, 0, 300, 400);
+    await _context.BeginBatchAsync();
+    foreach (var path in state.Paths)
+    {
+        await _context.BeginPathAsync();
+        await _context.SetLineWidthAsync((float)path.Thickness);
+
+        var color = "black";
+
+        switch (path.ColorIndex)
+        {
+            default:
+            case 0:
+                color = "black";
+                break;
+            case 1:
+                color = "red";
+                break;
+            case 2:
+                color = "orange";
+                break;
+            case 3:
+                color = "yellow";
+                break;
+            case 4:
+                color = "green";
+                break;
+            case 5:
+                color = "blue";
+                break;
+            case 6:
+                color = "indigo";
+                break;
+            case 7:
+                color = "violet";
+                break;
+        }
+
+        await _context.SetStrokeStyleAsync(color);
+        //var drawingPath = new DrawingPath(path.ColorIndex, path.Thickness);
+        foreach (var point in path.Points)
+        //for (int i = 0; i <= path.Points.Count; i++)
+        {
+                        @*if (i == 0)
+                        {
+                            await _context.MoveToAsync(path.Points[i].X, path.Points[i].Y);
+                            continue;
+                        }*@
+
+                        await _context.LineToAsync(point.X, point.Y);
+                        await _context.StrokeAsync();
+                        //drawingPath.Add(new PointF(point.X, point.Y));
+                    }
+                    await _context.ClosePathAsync();
+                    await _context.EndBatchAsync();
+                    //paths.Add(drawingPath);
+
+                    lastUpdate = DateTime.Now;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to receive state");
+                Console.WriteLine(ex);
+            }
+        });
+
+    hubConnection.On<Player>(PlayerConnectedName, player =>
+    {
+        Players.Add(player);
+    });
+
+        @*hubConnection.On<SessionStarted>(SessionStartedName, session =>
+            {
+                Word = session.Word;
+                DrawingPlayerName = session.DrawingPlayerName;
+                Dispatcher.Dispatch(async () =>
+                {
+                    Clear();
+                    await Shell.Current.GoToAsync("main");
+                });
+            });*@
+
+        hubConnection.On<Guess>(GuessAttemptName, async guess =>
+        {
+            if (string.Equals(guess.GuessedWord, Word))
+            {
+                await hubConnection.SendAsync(
+                    GuessCorrectName,
+                    new GuessCorrect
+                    {
+                        GroupName = groupName,
+                        PlayerName = guess.PlayerName
+                    });
+            }
+        });
+
+        hubConnection.On<GuessCorrect>(GuessCorrectName, async guessCorrect =>
+        {
+            if (PlayerName == guessCorrect.PlayerName)
+            {
+                new Dialog
+                {
+                    Title = "Yay!",
+                    Body = "Congratulations you guessed it correctly!",
+                }.Open();
+
+                await StartSession("BEACH", PlayerName);
+            }
+            else
+            {
+                new Dialog
+                {
+                    Title = "Boo!",
+                    Body = $"'{guessCorrect.PlayerName}' guessed it correctly!",
+                }.Open();
+            }
+        });
+
+        await hubConnection.StartAsync();
+
+        await hubConnection.SendAsync(
+            PlayerConnectedName,
+            new Player
+            {
+                GroupName = groupName,
+                Name = name
+            });
+    }
+
+    public async Task StartSession(string word, string drawingPlayerName)
+    {
+        Word = word;
+        DrawingPlayerName = drawingPlayerName;
+
+        await hubConnection.SendAsync(
+            SessionStartedName,
+            new SessionStarted
+            {
+                Word = word,
+                GroupName = GroupName,
+                DrawingPlayerName = drawingPlayerName
+            });
+    }
+
+}

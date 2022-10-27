@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingGame.Shared", "..\Dr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingGame.Server", "..\DrawingGame.Server\DrawingGame.Server.csproj", "{B7C1E81F-CE70-48B3-9C5C-544490189269}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingGame.Web", "..\DrawingGame.Web\DrawingGame.Web.csproj", "{03834BD4-B4EF-4F0B-9584-32F71F14E383}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{B7C1E81F-CE70-48B3-9C5C-544490189269}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7C1E81F-CE70-48B3-9C5C-544490189269}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7C1E81F-CE70-48B3-9C5C-544490189269}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03834BD4-B4EF-4F0B-9584-32F71F14E383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03834BD4-B4EF-4F0B-9584-32F71F14E383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03834BD4-B4EF-4F0B-9584-32F71F14E383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03834BD4-B4EF-4F0B-9584-32F71F14E383}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
